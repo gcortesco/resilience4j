@@ -1,7 +1,9 @@
-package com.refactorizando.circuitbreaker.resilience4j.web;
+package com.refactorizando.circuitbreaker.resilience4j.controller;
 
 import com.refactorizando.circuitbreaker.resilience4j.model.Response;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +41,19 @@ public class Resilience4jController {
   public Mono<Response<Boolean>> timeDelay(@PathVariable int delay) {
     return Mono.just(toOkResponse())
         .delayElement(Duration.ofSeconds(delay));
+  }
+
+  @GetMapping("/retry/{valid}")
+  @Retry(name = "retryApi", fallbackMethod = FALLBACK_METHOD)
+  public Mono<Response<Boolean>> retry(@PathVariable boolean valid) {
+    return Mono.just(!valid)
+            .flatMap(this::toOkResponse);
+  }
+
+  @GetMapping("/rate-limiter")
+  @RateLimiter(name = "rateLimiterApi", fallbackMethod = FALLBACK_METHOD)
+  public Mono<Response<Boolean>> rateLimitApi() {
+    return Mono.just(toOkResponse());
   }
 
   @GetMapping(
